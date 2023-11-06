@@ -11,7 +11,7 @@ The details for this project can be found at **[this site](https://digitalcard.m
 ## Implementation
 
 * A prototype card viewer is included with the site **[here](./viewer/index.html)**
-* The content *Asset Library* can be found **[here](https://guannan-kwok.github.io/assetLibrary/assetLibrary.html)**
+* The *Asset Library* can be found **[here](https://guannan-kwok.github.io/assetLibrary/assetLibrary.html)**
 
 | | | 
 | :--: | :--: |
@@ -19,10 +19,10 @@ The details for this project can be found at **[this site](https://digitalcard.m
 | | |
 
 
-The following site demonstrates a sample implementation of the project which takes the following elements:
+The following website demonstrates a sample implementation of the project which takes the following elements:
 
 * Video game character content: Images, models and materials for "hero" characters and "props".
-* Card collection elements: custom vector graphics, icons, logos.
+* Card collection elements: Custom vector graphics, icons, logos.
 * Character customization and help: Custom Javascript triggers, tooltips / help sections.
 * 2D and 3D visualization: Materials, lighting amd environment options.
 
