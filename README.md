@@ -20,14 +20,14 @@ A prototype card viewer is included with the site **[here](./viewer/index.html)*
 
 The following site demonstrates a sample implementation of the project which takes the following elements:
 
-* Video game character contents: Image, models and materials for "hero" character and "props".
+* Video game character content: Images, models and materials for "hero" characters and "props".
 * Card collection elements: custom vector graphics, icons, logos.
-* Character customization and help: Custom Javascript triggers, tooltips / help.
-* 2D and 3D visualization: Materials, lighting / environment controls.
+* Character customization and help: Custom Javascript triggers, tooltips / help sections.
+* 2D and 3D visualization: Materials, lighting amd environment options.
 
-to compose a Web based "digital" playing card.
+to compose a Web-based digital playing card.
 
-These assets along with additional content was reused to generate additional promotion material such as the following poster which combined sboth 3d element (scene) and 2d elements (graphics). 
+Assets can be reused to generate additional associated material such as the following poster which combines existing and new 3d elements (scene) with new 2d elements (2d graphics). 
 
 <img style="border-radius:3%" src="./images/poster.png">
 
