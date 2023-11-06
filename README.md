@@ -1,6 +1,3 @@
-<title>Digital Card Viewer</title>
-<link rel="icon" type="image/x-icon" href="viewer/public/favicon.ico" />
-
 # Digital Card Project
 
 ## Introduction
