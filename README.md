@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The purpose of this project is to present and market a digital collectable card game. These cards are based on classic video game characters and are designed with a retro aesthetic to appeal to those familiar with 80s and 90s culture. To provide lasting value for users’ cards are upgradable in various ways to add additional models, animation, and sound. Cards are also able to be traded and sold within the service.
+The purpose of this project is to present and market a digital collectable cards. These cards are based on classic video game characters and are designed with a retro aesthetic to appeal to those familiar with 80s and 90s culture. To provide lasting value for users’ cards are upgradable in various ways to add additional models, animation, and sound. Cards are also able to be traded and sold within the service.
 
 These digital cards are sold online via our storefront. Cards are sold as a “base” model starting off. This is to encourage consumers to interact with the product in various ways such as writing a review for the product and sharing their impressions on social networks. Over time new cosmetic features will unlock to encourage users to continue using the service.
 
