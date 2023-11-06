@@ -1,3 +1,6 @@
+<title>Digital Card Viewer</title>
+<link rel="icon" type="image/x-icon" href="viewer/public/favicon.ico" />
+
 # Digital Card Project
 
 ## Introduction
@@ -10,7 +13,8 @@ The details for this project can be found at **[this site](https://digitalcard.m
 
 ## Implementation
 
-A prototype card viewer is included with the site **[here](./viewer/index.html)**
+* A prototype card viewer is included with the site **[here](./viewer/index.html)**
+* The content *Asset Library* can be found **[here](https://guannan-kwok.github.io/assetLibrary/assetLibrary.html)**
 
 | | | 
 | :--: | :--: |
@@ -30,5 +34,6 @@ to compose a Web-based digital playing card.
 Assets can be reused to generate additional associated material such as the following poster which combines existing and new 3d elements (scene) with new 2d elements (2d graphics). 
 
 <img style="border-radius:3%" src="./images/poster.png">
+
 
 
