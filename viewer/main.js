@@ -53306,14 +53306,14 @@ class Character
     static loadAssetFile(asset) {
         return new Promise((resolve, reject) => {
             const loader = new three_examples_jsm_loaders_GLTFLoader__WEBPACK_IMPORTED_MODULE_0__.GLTFLoader();
-            loader.load("./models/" + asset.getUri(), data => resolve(data), null, reject);
+            loader.load(asset.getUri(), data => resolve(data), null, reject);
         });    
     }
 
     static loadMaterialFile(asset) {
         return new Promise((resolve, reject) => {
             const loader = new three__WEBPACK_IMPORTED_MODULE_1__.FileLoader();
-            loader.load("./models/" + asset.getMaterialUri(), data => resolve(data), null, reject);
+            loader.load(asset.getMaterialUri(), data => resolve(data), null, reject);
         });    
     }
 
@@ -57814,7 +57814,29 @@ class MaterialXBinding
         return vec;
     }
 
-    static toThreeUniform(type, value, name, uniforms, textureLoader, searchPath, flipY) 
+    static createDummyTexture(width, height, colorValue )
+    {
+        const data = new Uint8Array( 4 * width * height );
+        const color = new three__WEBPACK_IMPORTED_MODULE_0__.Color( colorValue );
+        
+        const r = Math.floor( color.r * 255 );
+        const g = Math.floor( color.g * 255 );
+        const b = Math.floor( color.b * 255 );
+        
+        for ( let i = 0; i < size; i ++ ) 
+        {                            
+            const stride = i * 4;                                
+            data[ stride ] = r;
+            data[ stride + 1 ] = g;
+            data[ stride + 2 ] = b;
+            data[ stride + 3 ] = 255;        
+        }
+        
+        texture = new three__WEBPACK_IMPORTED_MODULE_0__.DataTexture( data, width, height );
+        texture.needsUpdate = true;  
+    }
+
+    static toThreeUniform(type, value, name, uniforms, textureLoader, searchPaths, flipY) 
     {
         let outValue;
         switch (type) {
@@ -57842,11 +57864,25 @@ class MaterialXBinding
                 break;
             case 'filename':
                 if (value) {
-                    let fullPath = searchPath + IMAGE_PATH_SEPARATOR + value;
-                    const texture = textureLoader.load(fullPath);
-                    // Set address & filtering mode
-                    this.setTextureParameters(texture, name, uniforms, flipY);
-                    outValue = texture;
+                    var texture = null;
+                    const paths = searchPaths.split(';');
+                    for (const path of paths)
+                    {
+                        let fullPath = path + IMAGE_PATH_SEPARATOR + value;
+                        texture = textureLoader.load(fullPath, undefined, undefined,
+                            function ( err ) 
+                            {                             
+                                outValue = createDummyTexture(2, 2, 0xffffff);
+                            }                            
+                        );
+                        if (texture)
+                        {
+                            // Set address & filtering mode
+                            this.setTextureParameters(texture, name, uniforms, flipY);
+                            outValue = texture;
+                            break;
+                        }
+                    }
                 }
                 break;
             case 'samplerCube':
@@ -57889,29 +57925,37 @@ class MaterialXBinding
         }
         return filterType;
     }
-
+    
     static setTextureParameters(texture, name, uniforms, flipY = true, generateMipmaps = true)
     {
         const idx = name.lastIndexOf(IMAGE_PROPERTY_SEPARATOR);
         const base = name.substring(0, idx) || name;
-
+    
         texture.generateMipmaps = generateMipmaps;
-
-        const uaddressmode = uniforms.find(base + UADDRESS_MODE_SUFFIX)?.getValue().getData();
-        const vaddressmode = uniforms.find(base + VADDRESS_MODE_SUFFIX)?.getValue().getData();
-
-        texture.wrapS = this.getWrapping(uaddressmode);
-        texture.wrapT = this.getWrapping(vaddressmode);
-
-        const filterType = uniforms.get(base + FILTER_TYPE_SUFFIX) ? uniforms.get(base + FILTER_TYPE_SUFFIX).value : -1;
-        texture.magFilter = three__WEBPACK_IMPORTED_MODULE_0__.LinearFilter;
-        texture.minFilter = this.getMinFilter(filterType, generateMipmaps);
-
+    
+        if (uniforms.find(base + UADDRESS_MODE_SUFFIX)) {
+            const uaddressmode = uniforms.find(base + UADDRESS_MODE_SUFFIX).getValue().getData();
+            texture.wrapS = getWrapping(uaddressmode);
+        }
+    
+        if (uniforms.find(base + VADDRESS_MODE_SUFFIX)) {
+            const vaddressmode = uniforms.find(base + VADDRESS_MODE_SUFFIX).getValue().getData();
+            if (vaddressmode)
+                texture.wrapT = getWrapping(vaddressmode);
+        }
+    
+        if (uniforms.find(base + FILTER_TYPE_SUFFIX))
+        {
+            const filterType = uniforms.get(base + FILTER_TYPE_SUFFIX).value;
+            texture.magFilter = three__WEBPACK_IMPORTED_MODULE_0__.LinearFilter;
+            texture.minFilter = getMinFilter(filterType, generateMipmaps);
+        }
+    
         texture.flipY = flipY;
     }
 }
 
-function getUniformValues(shaderStage, textureLoader, searchPath, flipY)
+function getUniformValues(shaderStage, textureLoader, searchPaths, flipY)
 {
     let threeUniforms = {};
 
@@ -57925,7 +57969,7 @@ function getUniformValues(shaderStage, textureLoader, searchPath, flipY)
                 const value = variable.getValue()?.getData();
                 const name = variable.getVariable();
                 threeUniforms[name] = new three__WEBPACK_IMPORTED_MODULE_0__.Uniform(MaterialXBinding.toThreeUniform(variable.getType().getName(), value, name, uniforms, 
-                                                        textureLoader, searchPath, flipY));
+                                                        textureLoader, searchPaths, flipY));
             }
         }
     });
@@ -58035,22 +58079,16 @@ class MaterialXRenderer
         });
     }
 
-    async loadMaterials(materialFilename, materialStrings)
+    async loadMaterials(searchPaths, materialStrings)
     {
         this._materials = [];
         const mx = this.mx;
         const doc = this._document;
 
-        // Set search path. Assumes images are relative to current file
-        // location.
-        const paths = materialFilename.split('/');
-        paths.pop(); 
-        let searchPath = "viewer/" + paths.join('/');
-
         // Merge all documents with materials
         for (let materialString of materialStrings)
         {
-            await mx.readFromXmlString(this._document, materialString, searchPath);
+            await mx.readFromXmlString(this._document, materialString, searchPaths);
         }
 
         // Scan for materials and create shader
@@ -58080,12 +58118,12 @@ class MaterialXRenderer
                         let newAssignment;
                         if (collection || geom)
                         {
-                            //console.log("Create new assignment: ", shader.getName(), ",", geom, ",", collection);
+                            console.log("Create new assignment: ", matName, shader.getName(), ",", geom, ",", collection);
                             newAssignment = new MaterialXAssignment(shader, geom, collection);
                         }
                         else
                         {
-                            newAssignment = new MaterialXAssignment(shader, NO_GEOMETRY_SPECIFIER);
+                            newAssignment = new MaterialXAssignment(shader, NO_GEOMETRY_SPECIFIER, "");
                         }
 
                         if (newAssignment)
@@ -58118,7 +58156,7 @@ class MaterialXRenderer
             if (!shader)
             {
                 //console.log("Generate material: ", materialName);
-                shader = this.generateMaterial(matassign.getMaterial(), searchPath);
+                shader = this.generateMaterial(matassign.getMaterial(), searchPaths);
                 this._shaderMap[materialName] = shader;
             }
             matassign.setShader(shader);
@@ -58222,7 +58260,7 @@ class MaterialXRenderer
     // 
     // Generate a new material for a given element
     //
-    generateMaterial(elem, searchPath) 
+    generateMaterial(elem, searchPaths) 
     {
         const mx = this.mx;
         const textureLoader = new three__WEBPACK_IMPORTED_MODULE_0__.TextureLoader();
@@ -58237,16 +58275,19 @@ class MaterialXRenderer
         // Perform transparency check on renderable item
         const isTransparent = mx.isTransparentSurface(elem, gen.getTarget());
         genContext.getOptions().hwTransparency = isTransparent;
+        const opts = genContext.getOptions();
+        //opts.shaderInterfaceType = mx.ShaderInterfaceType.SHADER_INTERFACE_REDUCED;
 
         // Generate GLES code
-        let shader = gen.generate(elem.getNamePath(), elem, genContext);
+        let shaderName = elem.getNamePath();
+        let shader = gen.generate(shaderName, elem, genContext);
 
         // Get shaders and uniform values
         const vShader = shader.getSourceCode("vertex");
         const fShader = shader.getSourceCode("pixel");
 
         // Validate
-        const validate = true;
+        const validate = false;
         if (validate)
         {
             const gl = this._canvas.getContext('webgl2');            
@@ -58283,8 +58324,23 @@ class MaterialXRenderer
         }
 
         let uniforms = {
-            ...getUniformValues(shader.getStage('vertex'), textureLoader, searchPath, true),
-            ...getUniformValues(shader.getStage('pixel'), textureLoader, searchPath, true),
+            ...getUniformValues(shader.getStage('vertex'), textureLoader, searchPaths, true),
+            ...getUniformValues(shader.getStage('pixel'), textureLoader, searchPaths, true),
+        }
+
+        let puniforms = {
+            ...getUniformValues(shader.getStage('pixel'), textureLoader, searchPaths, true),
+        }
+
+        var count = 0;
+        for (var u in puniforms)
+        {
+            count++;
+        }
+        console.log(shaderName, "-- uniform count:", count);
+        for (var u in puniforms)
+        {
+            //console.log("- ", u);
         }
 
         Object.assign(uniforms, {
@@ -58293,7 +58349,7 @@ class MaterialXRenderer
             u_envMatrix: { value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4().makeRotationY(0) }, //Math.PI
             u_envRadiance: { value: radianceTexture },
             u_envRadianceMips: { value: Math.trunc(Math.log2(Math.max(radianceTexture.image.width, radianceTexture.image.height))) + 1 },
-            u_envRadianceSamples: { value: 16 },
+            u_envRadianceSamples: { value: 8 },
             u_envIrradiance: { value: irradianceTexture },
             u_refractionEnv: { value: true }
         });
@@ -58376,10 +58432,10 @@ class MaterialXRenderer
     }    
 
     async initialize(renderer, radianceTexture, irradianceTexture, directLightingString, 
-                     materialFilename, materialStrings)
+                     searchPaths, materialStrings)
     {
         await this.initializeLighting(renderer, radianceTexture, irradianceTexture, directLightingString);
-        await this.loadMaterials(materialFilename, materialStrings);
+        await this.loadMaterials(searchPaths, materialStrings);
     }
 
     updateTransforms()
@@ -62365,10 +62421,16 @@ function loadScene(remderer, scene, characterInfo, camera)
         index++;
         if (useMaterialXMaterials)
         {
+            // Set search path. Assumes images are relative to current file
+            // location.
+            const paths = mainCharacter.getUri().split('/');
+            paths.pop(); 
+            const searchPath = paths.join('/');
+
             var mtlx = result[index];
             materialxRenderer = new _materialx_render_js__WEBPACK_IMPORTED_MODULE_6__.MaterialXRenderer(mtlx, scene, camera, canvas);
             materialxRenderer.initialize(threeRenderer, radianceTexture, irradianceTexture, 
-                                    directLightingString, "../models/kirby/", materials);
+                                    directLightingString, searchPath, materials);
         }        
 
         radianceTexture.mapping = three__WEBPACK_IMPORTED_MODULE_9__.EquirectangularReflectionMapping;
